@@ -10,10 +10,10 @@ websiteUrl = "https://discord.gg/3aaru2VyHJ"
 containsNsfwContent = false
 
 [package.dependencies]
-denikson-BepInExPack_Valheim = "5.4.2333"
+denikson-BepInExPack_Valheim = "5.4.2350"
 ValheimModding-JsonDotNET = "13.0.4"
 ValheimModding-YamlDotNET = "16.3.1"
-ValheimModding-Jotunn = "2.29.1"
+ValheimModding-Jotunn = "2.30.2"
 
 [build]
 icon = "./icon.png"
