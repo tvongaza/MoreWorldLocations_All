@@ -267,9 +267,10 @@ public static class AuditCacheCanonical
 
     /// <summary>
     /// Whether a file under the config folder is one of MWL's own: its BepInEx
-    /// settings (named after its plugin id) and its YAML files. Everything else
-    /// there belongs to other plugins, and reaches a verdict only through the
-    /// stock prefabs, which are checked directly.
+    /// settings (named after its plugin id) and its content YAML files.
+    /// Localization YAML only supplies display text, so it cannot change a
+    /// compatibility verdict or the selected locations. Other plugins reach
+    /// a verdict through the stock prefabs, which are checked directly.
     /// </summary>
     public static bool IsMwlConfigFile(string relativePath, string pluginGuid)
     {
@@ -281,7 +282,8 @@ public static class AuditCacheCanonical
             return name.StartsWith(pluginGuid, StringComparison.OrdinalIgnoreCase);
         if (name.EndsWith(".yml", StringComparison.OrdinalIgnoreCase)
             || name.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase))
-            return name.StartsWith(MwlYamlPrefix, StringComparison.OrdinalIgnoreCase);
+            return name.StartsWith(MwlYamlPrefix, StringComparison.OrdinalIgnoreCase)
+                && !name.StartsWith(MwlYamlPrefix + "Localization.", StringComparison.OrdinalIgnoreCase);
         return false;
     }
 
@@ -352,8 +354,11 @@ public static class AuditCacheCanonical
     /// that template's bundle: its manifest line and the bundle's digest are the
     /// template's files. Everything else — MWL's other bundles (dungeon rooms,
     /// prefabs), other files, the manifest's header, dependencies and other
-    /// assets — is shared, and a change to it re-audits everything. MWL's DLL and
-    /// its symbols are left out: <c>mwl-code</c> stands for them.</para>
+    /// assets — is shared, and a change to it re-audits everything. A bundle
+    /// containing both a template and a shared asset remains shared. When the
+    /// manifest declares inter-bundle dependencies, every bundle remains shared
+    /// until those dependencies can be assigned to individual templates. MWL's
+    /// DLL and its symbols are left out: <c>mwl-code</c> stands for them.</para>
     ///
     /// <para>Anything the split cannot be sure of makes everything shared,
     /// which is the key as it was before templates had inputs of their own: a
@@ -424,24 +429,35 @@ public static class AuditCacheCanonical
 
         Dictionary<string, List<string>> perTemplate = new Dictionary<string, List<string>>(StringComparer.Ordinal);
         HashSet<string> claimed = new HashSet<string>(StringComparer.Ordinal);
+        HashSet<string> sharedBundles = new HashSet<string>(StringComparer.Ordinal);
         List<string> sharedAssets = new List<string>();
         foreach (SoftRefManifest.Asset asset in parsed!.Assets)
         {
             string line = "asset\t" + Escape(asset.Id) + "\t" + Escape(asset.Bundle) + "\t" + Escape(asset.PathInBundle) + "\n";
             string file = asset.PathInBundle.Replace('\\', '/');
             string stem = Path.GetFileNameWithoutExtension(file.Substring(file.LastIndexOf('/') + 1));
+            string bundle = (bundleDirectory!.Length == 0 ? "" : bundleDirectory + "/") + asset.Bundle;
             if (!names.Contains(stem))
             {
                 sharedAssets.Add(line);
+                sharedBundles.Add(bundle);
                 continue;
             }
-            string bundle = (bundleDirectory!.Length == 0 ? "" : bundleDirectory + "/") + asset.Bundle;
             claimed.Add(bundle);
             if (!perTemplate.TryGetValue(stem, out List<string>? lines))
                 perTemplate[stem] = lines = new List<string>();
             lines.Add(line);
             lines.Add("bundle\t" + Escape(bundle) + "\t" + (digests.TryGetValue(bundle, out string? digest) ? digest : "absent") + "\n");
         }
+
+        // Claiming a template does not give it exclusive ownership of its
+        // bundle. Decide after the entire manifest, independently of asset order.
+        claimed.ExceptWith(sharedBundles);
+        // Dependency lines alone do not fingerprint dependency bytes. The
+        // shipped manifest has none; keep unfamiliar dependency layouts safe
+        // without opening bundles or guessing their transitive consumers.
+        if (parsed.Dependencies.Count > 0)
+            claimed.Clear();
 
         StringBuilder shared = new StringBuilder();
         shared.Append("split\tmanifest\t").Append(Escape(manifest!)).Append('\n');

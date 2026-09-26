@@ -59,10 +59,15 @@ every template:
 * the files in MWL's plugin folder that no template claims: bundles no
   manifest asset of a judged name lives in (such as dungeon rooms and prefab
   bundles), other files, and the manifest's header, dependencies and other
-  assets. If the manifest is outside MWL's folder or cannot be read, every
-  bundle counts here;
+  assets. A bundle containing a shared asset still counts here even if it
+  also contains a judged template. If the manifest declares inter-bundle
+  dependencies, is outside MWL's folder or cannot be read, every bundle
+  counts here;
 * MWL's own settings under `BepInEx/config`: its `.cfg` and its
-  `warpalicious.More_World_Locations_*` YAML files;
+  `warpalicious.More_World_Locations_*` YAML files, except the
+  `warpalicious.More_World_Locations_Localization.<Language>.yml` translation
+  files (or `.yaml`). Adding, editing or removing those files changes display
+  text, so it does not cause a new compatibility audit;
 * the game's `assembly_valheim.dll`, its version text, network version, and
   whether it runs headless;
 * the loaded Jötunn DLL and every file in `BepInEx/core`;
