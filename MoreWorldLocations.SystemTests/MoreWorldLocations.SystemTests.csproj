@@ -3,5 +3,6 @@
     <OutputType>Exe</OutputType><RollForward>Major</RollForward><TargetFramework>net9.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><IsPackable>false</IsPackable>
     <GameTestingProject Condition="'$(GameTestingProject)' == ''">../../cli-test-framework/Toolkit/Valheim.Testing.Game/Valheim.Testing.Game.csproj</GameTestingProject>
   </PropertyGroup>
-  <ItemGroup><ProjectReference Include="$(GameTestingProject)" /></ItemGroup>
+  <ItemGroup Condition="'$(ToolkitPackageVersion)' == ''"><ProjectReference Include="$(GameTestingProject)" /></ItemGroup>
+  <ItemGroup Condition="'$(ToolkitPackageVersion)' != ''"><PackageReference Include="Valheim.Testing.Game" Version="$(ToolkitPackageVersion)" /></ItemGroup>
 </Project>

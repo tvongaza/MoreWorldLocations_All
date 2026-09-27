@@ -94,3 +94,11 @@ dotnet run --project MoreWorldLocations.SystemTests -- \
 
 Full MWL port scenarios still need a prepared game fixture. Fast tests do not
 establish Harmony timing, RPC settlement, or persistence in the game.
+
+
+For a standalone consumer, pass `-p:ToolkitPackageVersion=0.1.0-preview.3` to the
+system/adapter test projects and supply the local package feed. This avoids the
+sibling CLI source checkout for the external driver. The game adapter still builds
+against the exact installed CLI extension API via `CliDll`. The 35 local tests
+pass against this preview. Full-mode payment/delivery/ownership gameplay remains
+unrun; the validated Roads terrain scenarios do not establish those MWL effects.
