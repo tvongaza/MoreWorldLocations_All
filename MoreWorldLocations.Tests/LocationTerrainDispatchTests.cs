@@ -254,7 +254,7 @@ public class LocationTerrainDispatchTests : IDisposable
         // "TCData is not null" as success is how a completed identity gets paired
         // with terrain this write never made.
         Heightmap hmA = Load(A);
-        hmA.m_terrainComp!.SaveFails = true;
+        hmA.m_terrainComp!.m_initialized = false; // The game's Save returns silently for a compiler not set up.
 
         LocationTerrainWriter.WriteZone(A, hmA, new List<LocationTerrainPlan.PlacedSite> { BoundarySite() });
 
@@ -277,7 +277,7 @@ public class LocationTerrainDispatchTests : IDisposable
         compiler.Save();
         Assert.NotNull(compiler.m_nview.GetZDO().GetByteArray(ZDOVars.s_TCData));
 
-        compiler.SaveFails = true;
+        compiler.m_initialized = false;
         LocationTerrainWriter.WriteZone(A, hmA, new List<LocationTerrainPlan.PlacedSite> { BoundarySite() });
 
         Assert.DoesNotContain(LocationTerrainLedger.All(),

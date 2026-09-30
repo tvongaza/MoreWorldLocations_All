@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TestingPackageVersion Condition="'$(TestingPackageVersion)' == ''">0.1.0-preview.7</TestingPackageVersion>
-        <DoublesPackageVersion Condition="'$(DoublesPackageVersion)' == ''">0.1.0-preview.5</DoublesPackageVersion>
+        <DoublesPackageVersion Condition="'$(DoublesPackageVersion)' == ''">0.1.0-preview.6</DoublesPackageVersion>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -29,8 +29,7 @@
 
     <!--
       The game doubles come from the Valheim.Testing.Doubles source package, compiled
-      into this assembly. The .cs files in this project are MWL's additions to them and
-      the parts MWL's tests need modelled differently. A partial type cannot span
+      into this assembly. The .cs files in this project are MWL's additions to them. A partial type cannot span
       assemblies, so every addition lives here, never in the test project. See
       https://github.com/tvongaza/ValheimTesting/blob/main/docs/testing-toolkit.md#a-doubles-assembly-named-assembly_valheim
     -->
@@ -40,28 +39,5 @@
         <PackageReference Include="Valheim.Testing" Version="[$(TestingPackageVersion)]" />
     </ItemGroup>
 
-    <!--
-      Four package files are left out, each replaced by MWL's own code in this project
-      (each replacement file's header says what differs):
-        ValheimDoubles.cs          Fork/ValheimDoubles.cs is a copy of it whose TerrainComp.Save
-                                   writes the game's terrain bytes instead of a placeholder.
-        TerrainModifierDoubles.cs  TerrainModifierShim.cs: MWL's TerrainModifier is a component
-                                   on a template's objects.
-        GameplayDoubles.cs         GameplayShims.cs: MWL's HeightmapBuilder can leave a zone
-                                   unbuilt, which the terrain bridge must refuse.
-        UnityRenderingDoubles.cs   RenderingShims.cs: the template walk reads a component's
-                                   public fields, and Unity keeps a light's or an animator's
-                                   settings in native properties it cannot see.
-      The build stops if the package no longer ships exactly these four files.
-    -->
-    <Target Name="DropClashingToolkitDoubles" BeforeTargets="CoreCompile">
-        <ItemGroup>
-            <_ToolkitDoubleToDrop Include="@(Compile)"
-                                  Condition="'%(Compile.NuGetPackageId)' == 'Valheim.Testing.Doubles' And ('%(Compile.Filename)' == 'ValheimDoubles' Or '%(Compile.Filename)' == 'TerrainModifierDoubles' Or '%(Compile.Filename)' == 'GameplayDoubles' Or '%(Compile.Filename)' == 'UnityRenderingDoubles')" />
-            <Compile Remove="@(_ToolkitDoubleToDrop)" />
-        </ItemGroup>
-        <Error Condition="'@(_ToolkitDoubleToDrop->Count())' != '4'"
-               Text="Expected to leave out ValheimDoubles.cs, TerrainModifierDoubles.cs, GameplayDoubles.cs and UnityRenderingDoubles.cs of Valheim.Testing.Doubles $(DoublesPackageVersion), found @(_ToolkitDoubleToDrop->Count()). Compare the package's file names with this target." />
-    </Target>
 
 </Project>
