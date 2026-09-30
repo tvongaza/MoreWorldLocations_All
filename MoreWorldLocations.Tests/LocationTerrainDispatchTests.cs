@@ -29,6 +29,7 @@ public class LocationTerrainDispatchTests : IDisposable
 
     private readonly SyntheticWorld _world = new();
     private readonly HeightmapBuilder _builder = new();
+    private readonly ZNet _net = ZNet.instance;
 
     public LocationTerrainDispatchTests()
     {
@@ -36,8 +37,9 @@ public class LocationTerrainDispatchTests : IDisposable
         WorldGenerator.instance = _world;
         HeightmapBuilder.instance = _builder;
         ZoneSystem.instance = new ZoneSystem();
-        Heightmap.Registered = null;
-        Heightmap.Loaded.Clear();
+        // No network unless a test makes one: the doubles start with a ZNet.
+        ZNet.instance = null!;
+        Heightmap.Registered = null;   // no zone loaded
         LocationTerrainWriter.Reset();
         _builder.Build(A, _world);
         _builder.Build(B, _world);
@@ -49,8 +51,8 @@ public class LocationTerrainDispatchTests : IDisposable
         WorldGenerator.instance = null;
         HeightmapBuilder.instance = null;
         ZoneSystem.instance = null;
+        ZNet.instance = _net;
         Heightmap.Registered = null;
-        Heightmap.Loaded.Clear();
         LocationTerrainWriter.Reset();
     }
 
@@ -59,11 +61,13 @@ public class LocationTerrainDispatchTests : IDisposable
     {
         Heightmap hm = Heightmap.CreateForZone(zone, width: 64, withCompiler: withCompiler);
         hm.m_buildData = _builder.Built.TryGetValue(zone, out var built) ? built : null;
-        Heightmap.Loaded[zone] = hm;
+        Unload(zone);
+        Heightmap.s_heightmaps.Add(hm);
         return hm;
     }
 
-    private void Unload(Vector2s zone) => Heightmap.Loaded.Remove(zone);
+    private void Unload(Vector2s zone) =>
+        Heightmap.s_heightmaps.RemoveAll(loaded => ZoneSystem.GetZone(loaded.transform.position) == zone);
 
     private void Generated(Vector2s zone) => ZoneSystem.instance.Generated.Add(zone);
 
@@ -545,12 +549,12 @@ public class LocationTerrainDispatchTests : IDisposable
 
             // A peer that IS connected still owns its own compiler.
             compiler.SetOwner(4242L);
-            ZNet.instance.ConnectedPeers.Add(4242L);
+            ZNet.instance.Peers[4242L] = new ZNetPeer();
             Assert.False(LocationTerrainBridge.WriteDetached(
                 A, zone, TerrainBlob.Header.Fresh, out failure));
             Assert.Contains("connected peer", failure);
         }
-        finally { ZNet.instance = null; }
+        finally { ZNet.instance = null!; }
     }
 
     [Fact]

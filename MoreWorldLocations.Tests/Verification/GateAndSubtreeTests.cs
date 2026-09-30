@@ -389,7 +389,7 @@ public class GateAndSubtreeTests
     public void AnInheritedColliderSwitchedOffIsNotStockEquivalent()
     {
         (GameObject root, GameObject stock, GameObject emitted) = Trees();
-        emitted.transform.GetChild(0).gameObject.activeSelf = false;
+        emitted.transform.GetChild(0).gameObject.SetActive(false);
 
         Assert.False(Judge(root, stock).Approved);
     }
