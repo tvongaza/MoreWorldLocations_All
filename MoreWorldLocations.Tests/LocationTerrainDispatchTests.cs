@@ -29,6 +29,8 @@ public class LocationTerrainDispatchTests : IDisposable
 
     private readonly SyntheticWorld _world = new();
     private readonly HeightmapBuilder _builder = new();
+    /// <summary>The build each zone's heightmap was made from, as generation hands it over.</summary>
+    private readonly Dictionary<Vector2s, HeightmapBuilder.HMBuildData> _built = new();
     private readonly ZNet _net = ZNet.instance;
 
     public LocationTerrainDispatchTests()
@@ -41,8 +43,8 @@ public class LocationTerrainDispatchTests : IDisposable
         ZNet.instance = null!;
         Heightmap.Registered = null;   // no zone loaded
         LocationTerrainWriter.Reset();
-        _builder.Build(A, _world);
-        _builder.Build(B, _world);
+        _built[A] = _builder.Build(A, _world);
+        _built[B] = _builder.Build(B, _world);
     }
 
     public void Dispose()
@@ -60,7 +62,7 @@ public class LocationTerrainDispatchTests : IDisposable
     private Heightmap Load(Vector2s zone, bool withCompiler = true)
     {
         Heightmap hm = Heightmap.CreateForZone(zone, width: 64, withCompiler: withCompiler);
-        hm.m_buildData = _builder.Built.TryGetValue(zone, out var built) ? built : null;
+        hm.m_buildData = _built.TryGetValue(zone, out var built) ? built : null;
         Unload(zone);
         Heightmap.s_heightmaps.Add(hm);
         return hm;
@@ -618,7 +620,9 @@ public class LocationTerrainDispatchTests : IDisposable
     [Fact]
     public void AZoneWithNoGeneratedHeightsWaitsRatherThanConvertingAgainstZero()
     {
-        _builder.Built.Remove(A);
+        // Zone A's build is handed out elsewhere first, so the builder has none ready for it.
+        _builder.RequestTerrainSync(ZoneSystem.GetZonePos(A), 64, 1f, false, _world);
+        _built.Remove(A);
         Heightmap hmA = Load(A);
         hmA.m_buildData = null;
 
