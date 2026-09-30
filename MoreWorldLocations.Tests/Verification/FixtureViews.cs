@@ -9,7 +9,7 @@ internal static class FixtureViews
 {
     public static ZNetView AddPersistentView(this GameObject go)
     {
-        ZNetView view = go.AddPersistentView();
+        ZNetView view = go.AddComponent<ZNetView>();
         view.m_persistent = true;
         return view;
     }
