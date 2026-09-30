@@ -340,11 +340,11 @@ public class GateAndSubtreeTests
     {
         var root = new GameObject("ReviewSite");
         GameObject emitted = root.Child("wood_floor");
-        emitted.AddComponent<ZNetView>();
+        emitted.AddPersistentView();
         emitted.Child("mesh").AddComponent<BoxCollider>();
 
         var stock = new GameObject("wood_floor");
-        stock.AddComponent<ZNetView>();
+        stock.AddPersistentView();
         stock.Child("mesh").AddComponent<BoxCollider>();
         return (root, stock, emitted);
     }
@@ -451,6 +451,7 @@ public class GateAndSubtreeTests
         // The game's own components keep their settings in public fields, so a
         // drop table pointed somewhere else is read by reflection.
         (GameObject root, GameObject stock, GameObject emitted) = Trees();
+        Templates.Asleep(root); Templates.Asleep(stock); // Assets do not wake; a Container awake needs a view.
         Container authored = emitted.Child("chest").AddComponent<Container>();
         authored.m_defaultItems.m_drops.Add(new DropTable.DropData { m_item = new GameObject("Ruby") });
         Container original = stock.Child("chest").AddComponent<Container>();

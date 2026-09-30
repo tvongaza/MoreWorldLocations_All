@@ -51,7 +51,7 @@ public sealed class EmissionTraceTests : IDisposable
     {
         GameObject go = parent.Child(prefab);
         go.transform.position = new Vector3(x, 0f, z);
-        go.AddComponent<ZNetView>();
+        go.AddPersistentView();
         return go;
     }
 
@@ -66,7 +66,7 @@ public sealed class EmissionTraceTests : IDisposable
         var go = new GameObject(prefab + "(Clone)");
         go.transform.position = at;
         var zdo = ZDOMan.instance!.CreateNewZDO(at, prefab.GetStableHashCode());
-        var view = go.AddComponent<ZNetView>();
+        var view = go.AddPersistentView();
         view.Zdo = zdo;
         return (view, zdo);
     }
