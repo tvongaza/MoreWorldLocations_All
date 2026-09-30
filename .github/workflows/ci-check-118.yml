@@ -1,0 +1,21 @@
+name: CI check for #118 (temporary)
+# Assistant-written; never merged: checks the squashed #118 against NuGet.org packages only, on hosted runners.
+on:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env: { DOTNET_CLI_TELEMETRY_OPTOUT: '1', DOTNET_NOLOGO: '1' }
+    steps:
+      - uses: actions/checkout@v5
+        with: { persist-credentials: false }
+      - uses: actions/setup-dotnet@v5
+        with: { dotnet-version: '10.0.x' }
+      - run: dotnet test MoreWorldLocations.Tests/MoreWorldLocations.Tests.csproj -c Release -f net10.0
+      - run: dotnet test MoreWorldLocations.TestAdapter.Tests/MoreWorldLocations.TestAdapter.Tests.csproj -c Release
+      - run: |
+          sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends mono-complete
+          bash tools/test-runners/run-tests.sh -c Release -f net48 MoreWorldLocations.Tests/MoreWorldLocations.Tests.csproj
