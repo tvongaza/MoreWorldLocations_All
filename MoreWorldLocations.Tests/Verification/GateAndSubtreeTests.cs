@@ -122,13 +122,19 @@ public class GateAndSubtreeTests
         // Accepting a longer array and reading it with this grid's stride walks
         // a 65-wide zone along 33-wide rows: every row after the first comes
         // from the wrong place, and the result still looks like terrain.
+        //
+        // The game's builder matches a build by its grid (width and scale) as well as its centre, so a wider build never
+        // answers a narrower question; a wrong-length array can only reach the bridge as a heightmap's own build data.
+        // (An earlier double matched by zone alone and handed the 65-wide build to the 33-wide question.)
         using var world = new TerrainWorld();
         var zone = new Vector2s(0, 0);
-        world.Builder.Build(zone, world.World, width: TerrainZoneDeltas.ZoneWidth);
+        Heightmap heightmap = Heightmap.CreateForZone(zone, width: TerrainZoneDeltas.ZoneWidth, withCompiler: false);
+        heightmap.m_buildData = world.Builder.Build(zone, world.World, width: TerrainZoneDeltas.ZoneWidth);
 
         Assert.False(LocationTerrainBridge.TryGeneratedHeightAt(
-            new TerrainZoneDeltas(ZoneSystem.GetZonePos(zone), 32, 1f), null, out _, out string reason));
-        Assert.Contains("not", reason);
+            new TerrainZoneDeltas(ZoneSystem.GetZonePos(zone), 32, 1f), heightmap, out _, out string reason));
+        // Not read with this grid's stride; and the builder has no 33-wide build for the zone.
+        Assert.Contains("no generated heights", reason);
     }
 
     // ---- nothing is published on an unanswered question --------------------
